@@ -27,9 +27,7 @@ class CheckerBot:
 """  # дублировать двойные фигурные скобки
 
 	def __init__(self):
-		self.site = pywikibot.Site('ru', 'wikipedia',
-								   user='CheckerCopyvioBot'
-								   )
+		self.site = pywikibot.Site('ru', 'wikipedia', user='CheckerCopyvioBot')
 
 	def get_newpages(self, length_listpages=300, hours_offset=2):
 		"""Взятие новых страниц со Special:NewPages. Альтернативы:
@@ -103,6 +101,7 @@ class CheckerBot:
 				print(' ...checked (%s%%)' % self.confidence_normalize(p['result']['best']['confidence']))
 		if self.newpages_no_doubles and not self.results:
 			print('%s Не найдено страниц с нарушением' % (self.get_timeutc()))
+		s.close()
 
 	def sort_by_persent(self):
 		for p in self.results:
@@ -111,7 +110,7 @@ class CheckerBot:
 				 'confidence': self.confidence_normalize(pb['confidence']), 'url': pb['url'],
 				 'time_create': p['time_create'], 'user': p['user']}
 			self.pages_checked.append(d)
-			if pb['confidence'] >= self.min_level_copivio_warning:
+			if self.confidence_normalize(pb['confidence']) >= self.min_level_copivio_warning:
 				self.pages_highrates.append(d)
 
 	@staticmethod
@@ -160,7 +159,7 @@ class CheckerBot:
 		# title = 'Обсуждение участника:CheckerCopyvioBot/Список'  # for tests
 		# title = 'Обсуждение Википедии:Песочница'  # for tests
 		for p in self.pages_highrates:
-			title = 'Обсуждение:' + p['pagename']
+			title = 'Обсуждение:' + p['title']
 			post_template = '\n{template} {status} --~~~~\n'.format(
 				template=self.select_postproperties_by_rate(p['confidence'])['TalkPage_template'],
 				status='<onlyinclude>{{Участник:CheckerCopyvioBot/Список/Проверяется}}</onlyinclude>',
@@ -220,6 +219,11 @@ if __name__ == '__main__':
 
 	# Взять список новых страниц
 	bot.get_newpages(length_listpages=100, hours_offset=1)
+	# bot.newpages = [
+	# 	{'time_create': '2018-02-14 13:30', 'pagename': 'Глазунов, Михаил Федорович', 'user': 'Qweasdqwe'},
+	# 	{'time_create': '2018-02-14 14:40', 'pagename': 'Тотолян, Арег Артёмович', 'user': 'Мит Сколов'},
+	# 	{'time_create': '2018-02-14 15:21', 'pagename': 'The birds трибьют группа', 'user': '93.100.209.184'},
+	# ]  for test
 
 	# Отфильтровка страниц
 	print('%s Отфильтровка ноднозначностей и уже проверенных страниц' % (bot.get_timeutc()), end=' ')
