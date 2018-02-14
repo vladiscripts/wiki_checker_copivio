@@ -220,10 +220,8 @@ if __name__ == '__main__':
 	# Взять список новых страниц
 	bot.get_newpages(length_listpages=100, hours_offset=1)
 	# bot.newpages = [
-	# 	{'time_create': '2018-02-14 13:30', 'pagename': 'Глазунов, Михаил Федорович', 'user': 'Qweasdqwe'},
-	# 	{'time_create': '2018-02-14 14:40', 'pagename': 'Тотолян, Арег Артёмович', 'user': 'Мит Сколов'},
-	# 	{'time_create': '2018-02-14 15:21', 'pagename': 'The birds трибьют группа', 'user': '93.100.209.184'},
-	# ]  for test
+	# 	{'time_create': '2018-02-14 16:00', 'pagename': 'Название статьи', 'user': 'Автор'},
+	# ]  # for test
 
 	# Отфильтровка страниц
 	print('%s Отфильтровка ноднозначностей и уже проверенных страниц' % (bot.get_timeutc()), end=' ')
