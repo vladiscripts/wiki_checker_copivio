@@ -236,7 +236,7 @@ if __name__ == '__main__':
 	# Взять список новых страниц
 	bot.get_newpages(length_listpages=100, hours_offset=1)
 	# for debug
-	# bot.newpages = [{'time_create': '2018-02-14 16:00', 'pagename': 'Название статьи', 'user': 'Автор'},]
+	# bot.newpages = [{'time_create': '2018-02-14 16:00', 'pagename': 'Название статьи', 'user': 'Автор'}, ]
 
 	if bot.newpages:
 		# Отфильтровка страниц
@@ -260,4 +260,5 @@ if __name__ == '__main__':
 		bot.posting_to_wikitable()
 
 		# Постинг на СО
-		bot.posting_to_Talk_pages()
+		# bot.posting_to_Talk_pages()
+		pass
