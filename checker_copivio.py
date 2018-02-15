@@ -39,7 +39,7 @@ class CheckerBot:
 		hours_offset - брать новые страницы за это число часов. 0 - без лимита по времени
 		length_listpages - число статей на странице, max 5000
 		"""
-		print('%s Получение списка новых страниц' % (self.get_timeutc()), end=' ')
+		self.print_with_time('Получение списка новых страниц', end=' ')
 		r = requests.get(url='https://ru.wikipedia.org/w/index.php',
 						 params={'title': 'Special:NewPages', 'limit': length_listpages, 'hidebots': 1})
 		tree = fromstring(r.text)
@@ -61,17 +61,26 @@ class CheckerBot:
 
 	def filter_pages_by_category(self, filterout_category):
 		"""отфильтровка ненужных страниц по категории"""
-		params = {'action': 'query', 'prop': 'categories', 'format': 'json', 'utf8': 1,
-				  'titles': '|'.join([p['pagename'] for p in self.newpages])}
-		r = requests.get('https://ru.wikipedia.org/w/api.php', params=params,
-						 headers={'User-Agent': 'user:textworkerBot'})
-		pc = r.json()['query']['pages']
+		if not self.newpages:
+			return
 		pagesout = set()
-		for p in pc.values():
-			if p.get('categories'):
-				for c in p['categories']:
-					if filterout_category in c.values():
-						pagesout.add(p['title'])
+		pagesstring = '|'.join([p['pagename'] for p in self.newpages])
+		params = {'action': 'query', 'prop': 'categories', 'titles': pagesstring, 'format': 'json', 'utf8': 1}
+		for i in range(3):
+			try:
+				r = requests.get('https://ru.wikipedia.org/w/api.php', params=params,
+								 headers={'User-Agent': 'user:textworkerBot'})
+				pc = r.json()['query']['pages']
+			except:
+				message = 'Ошибка запроса к WinAPI для получения категорий страниц: %s' % pagesstring
+				self.print_with_time(message)
+				continue
+			else:
+				for p in pc.values():
+					if p.get('categories'):
+						for c in p['categories']:
+							if filterout_category in c.values():
+								pagesout.add(p['title'])
 		self.newpages = [p for p in self.newpages if p['pagename'] not in pagesout]
 
 	def filter_already_checked_pages(self):
@@ -83,16 +92,16 @@ class CheckerBot:
 
 	def req_copyvios(self, use_search_engine=True):
 		"""Проверка страниц на КОПИВИО"""
+		if not self.newpages_no_doubles:
+			return
+		self.print_with_time('Отправка на проверку КОПИВИО')
 		s = requests.Session()
 		s.headers.update({'User-Agent': 'user:textworkerBot'})
-		s.params.update({'action': 'search', 'lang': 'ru', 'project': 'wikipedia',
-						 'use_engine': use_search_engine, 'use_links': True, 'nocache': False, 'noredirect': False,
-						 'noskip': False})
-		if self.newpages_no_doubles:
-			print('%s Отправка на проверку КОПИВИО' % (self.get_timeutc()))
+		s.params.update({'action': 'search', 'lang': 'ru', 'project': 'wikipedia', 'use_engine': use_search_engine,
+						 'use_links': True, 'nocache': False, 'noredirect': False, 'noskip': False})
 		for p in self.newpages_no_doubles:
 			title = p['pagename']
-			print('%s %s' % (self.get_timeutc(), title), end=' ')
+			self.print_with_time(title, end=' ')
 			r = s.get('https://tools.wmflabs.org/copyvios/api.json', params={'title': title})
 			page_result = r.json()
 			if page_result['status'] == 'ok':
@@ -100,7 +109,7 @@ class CheckerBot:
 				self.results.append(p)
 				print(' ...checked (%s%%)' % self.confidence_normalize(p['result']['best']['confidence']))
 		if self.newpages_no_doubles and not self.results:
-			print('%s Не найдено страниц с нарушением' % (self.get_timeutc()))
+			self.print_with_time('Не найдено страниц с нарушением')
 		s.close()
 
 	def sort_by_persent(self):
@@ -140,6 +149,8 @@ class CheckerBot:
 		return d
 
 	def posting_to_wikitable(self):
+		if not self.pages_highrates:
+			return
 		page = pywikibot.Page(self.site, 'Участник:CheckerCopyvioBot/Список')
 		text_to_post = []
 		# for p in self.pages_checked:  # for tests
@@ -155,6 +166,8 @@ class CheckerBot:
 		self.wiki_posting_page(page, t, '+')
 
 	def posting_to_Talk_pages(self):
+		if not self.pages_highrates:
+			return
 		# for p in self.pages_checked[:1]:  # for tests
 		# title = 'Обсуждение участника:CheckerCopyvioBot/Список'  # for tests
 		# title = 'Обсуждение Википедии:Песочница'  # for tests
@@ -186,9 +199,12 @@ class CheckerBot:
 	@staticmethod
 	def csv_read_dict(filename, delimiter=','):
 		import csv
-		with open(filename) as f_obj:
-			reader = csv.DictReader(f_obj, delimiter=delimiter)
-			return tuple(row for row in reader)
+		try:
+			with open(filename) as f_obj:
+				reader = csv.DictReader(f_obj, delimiter=delimiter)
+				return tuple(row for row in reader)
+		except:
+			return {}
 
 	@staticmethod
 	def csv_save_dict(path, dic, fieldnames=None, delimiter=',', headers=True):
@@ -205,13 +221,19 @@ class CheckerBot:
 
 	@staticmethod
 	def file_readtext(filename):
-		with open(filename, 'r', encoding='utf-8') as f:
-			text = f.read()
-		return text
+		try:
+			with open(filename, 'r', encoding='utf-8') as f:
+				text = f.read()
+			return text
+		except:
+			return ''
 
 	@staticmethod
 	def get_timeutc():
 		return datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S")
+
+	def print_with_time(self, message, end='\n'):
+		print('%s %s' % (self.get_timeutc(), message), end=end)
 
 
 if __name__ == '__main__':
@@ -223,29 +245,30 @@ if __name__ == '__main__':
 	# 	{'time_create': '2018-02-14 16:00', 'pagename': 'Название статьи', 'user': 'Автор'},
 	# ]  # for test
 
-	# Отфильтровка страниц
-	print('%s Отфильтровка ноднозначностей и уже проверенных страниц' % (bot.get_timeutc()), end=' ')
-	# По категории
-	filterout_category = 'Категория:Страницы значений по алфавиту'
-	bot.filter_pages_by_category(filterout_category)
-	# Чистка от уже проверенных, сохраняемых в файле с пред. запуска
-	bot.filter_already_checked_pages()
-	bot.csv_save_dict(bot.dataset_last_newpages, bot.newpages)
-	print('...done')
+	if bot.newpages:
+		# Отфильтровка страниц
+		print('%s Отфильтровка ноднозначностей и уже проверенных страниц' % (bot.get_timeutc()), end=' ')
+		# По категории
+		filterout_category = 'Категория:Страницы значений по алфавиту'
+		bot.filter_pages_by_category(filterout_category)
+		# Чистка от уже проверенных, сохраняемых в файле с пред. запуска
+		bot.filter_already_checked_pages()
+		bot.csv_save_dict(bot.dataset_last_newpages, bot.newpages)
+		print('...done')
 
-	# Проверка страниц на КОПИВИО
-	bot.req_copyvios(use_search_engine=True)
+		# Проверка страниц на КОПИВИО
+		bot.req_copyvios(use_search_engine=True)
 
-	# Запись результатов проверки в файлы, с отсортировкой по проценту
-	bot.sort_by_persent()
-	bot.save_results_to_files()
+		# Запись результатов проверки в файлы, с отсортировкой по проценту
+		bot.sort_by_persent()
+		bot.save_results_to_files()
 
-	# Постинг в таблицу
-	bot.posting_to_wikitable()
+		# Постинг в таблицу
+		bot.posting_to_wikitable()
 
-	# Постинг на СО
-	bot.posting_to_Talk_pages()
+		# Постинг на СО
+		bot.posting_to_Talk_pages()
 
-	# Постинг лога
-	# bot.post_log()
-	pass
+		# Постинг лога
+		# bot.post_log()
+		pass
