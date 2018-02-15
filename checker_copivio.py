@@ -144,7 +144,7 @@ class CheckerBot:
 			d['TalkPage_template'] = '{{Check copivio|60}}'
 		else:
 			d['table_color'] = 'white'
-			# d['TalkPage_template'] = '{{Check copivio|80}}'  # for test
+			# d['TalkPage_template'] = '{{Check copivio|80}}'  # for debug
 			d['TalkPage_template'] = ''
 		return d
 
@@ -153,7 +153,7 @@ class CheckerBot:
 			return
 		page = pywikibot.Page(self.site, 'Участник:CheckerCopyvioBot/Список')
 		text_to_post = []
-		# for p in self.pages_checked:  # for tests
+		# for p in self.pages_checked:  # for debug
 		for p in self.pages_highrates:
 			text_to_post.append(self.row_template.format(
 				confidence=p['confidence'],
@@ -168,9 +168,9 @@ class CheckerBot:
 	def posting_to_Talk_pages(self):
 		if not self.pages_highrates:
 			return
-		# for p in self.pages_checked[:1]:  # for tests
-		# title = 'Обсуждение участника:CheckerCopyvioBot/Список'  # for tests
-		# title = 'Обсуждение Википедии:Песочница'  # for tests
+		# for p in self.pages_checked[:1]:  # for debug
+		# title = 'Обсуждение участника:CheckerCopyvioBot/Список'
+		# title = 'Обсуждение Википедии:Песочница'
 		for p in self.pages_highrates:
 			title = 'Обсуждение:' + p['title']
 			post_template = '\n{template} {status} --~~~~\n'.format(
@@ -183,12 +183,6 @@ class CheckerBot:
 			else:
 				t = post_template
 			self.wiki_posting_page(page, t, '+')
-
-	def post_log(self):
-		page_log_out = pywikibot.Page(self.site, 'Участник:CheckerCopyvioBot/Log_output')
-		page_log_errors = pywikibot.Page(self.site, 'Участник:CheckerCopyvioBot/Log_errors')
-		self.wiki_posting_page(page_log_out, self.file_readtext('~/log.out'), '+')
-		self.wiki_posting_page(page_log_errors, self.file_readtext('~/log.err'), '+')
 
 	@staticmethod
 	def wiki_posting_page(page_obj, text_new, summary):
@@ -241,9 +235,8 @@ if __name__ == '__main__':
 
 	# Взять список новых страниц
 	bot.get_newpages(length_listpages=100, hours_offset=1)
-	# bot.newpages = [
-	# 	{'time_create': '2018-02-14 16:00', 'pagename': 'Название статьи', 'user': 'Автор'},
-	# ]  # for test
+	# for debug
+	# bot.newpages = [{'time_create': '2018-02-14 16:00', 'pagename': 'Название статьи', 'user': 'Автор'},]
 
 	if bot.newpages:
 		# Отфильтровка страниц
@@ -268,7 +261,3 @@ if __name__ == '__main__':
 
 		# Постинг на СО
 		bot.posting_to_Talk_pages()
-
-		# Постинг лога
-		# bot.post_log()
-		pass
