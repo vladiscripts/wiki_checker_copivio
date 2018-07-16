@@ -1,0 +1,6 @@
+__pycache__/
+\.idea/
+*.txt
+*.sqlite
+*.sqlite-journal
+*.csv
