@@ -27,7 +27,7 @@ class CheckerBot:
 """  # дублировать двойные фигурные скобки
 
     def __init__(self):
-        self.site = pywikibot.Site('ru', 'wikipedia', user='CheckerCopyvioBot')
+        self.site = pywikibot.Site('ru', 'wikipedia', user='CopyvioCheckerBot')
 
     def get_newpages(self, length_listpages=300, hours_offset_near=24, hours_offset_far=25):
         """Взятие новых страниц со Special:NewPages. Альтернативы:
