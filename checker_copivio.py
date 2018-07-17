@@ -54,14 +54,14 @@ class CheckerBot:
             time_create = datetime.strptime(time_create, "%H:%M, %d %m %Y")
             time_offset_min = datetime.utcnow() - timedelta(hours=hours_offset_near)
             time_offset_max = datetime.utcnow() - timedelta(hours=hours_offset_far)
-            if time_create < time_offset_min and time_create > time_offset_max:
+            if time_offset_min > time_create > time_offset_max:
                 pagename = p.cssselect('a.mw-newpages-pagename')[0].text_content()
                 user = p.cssselect('a.mw-userlink')[0].text_content()
                 time_create_f = datetime.strftime(time_create, "%Y-%m-%d %H:%M")
                 self.newpages.append({'time_create': time_create_f, 'pagename': pagename, 'user': user})
         print('...done')
 
-    def filter_pages_by_category(self, filterout_category):
+    def filter_pages_by_category(self, category):
         """отфильтровка ненужных страниц по категории"""
         if not self.newpages:
             return
@@ -81,7 +81,7 @@ class CheckerBot:
                 for p in pc.values():
                     if p.get('categories'):
                         for c in p['categories']:
-                            if filterout_category in c.values():
+                            if category in c.values():
                                 pagesout.add(p['title'])
         self.newpages = [p for p in self.newpages if p['pagename'] not in pagesout]
 
