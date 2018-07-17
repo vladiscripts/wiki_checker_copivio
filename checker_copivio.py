@@ -15,6 +15,7 @@ class CheckerBot:
     pages_checked, pages_highrates = [], []
     last_pages_checked_filename, last_pages_highrates_filename = 'pages_checked.csv', 'pages_highrate.csv'
     last_newpages_filename = 'last_newpages.csv'
+    bot_username = 'CopyvioCheckerBot'
     newpages_no_doubles = []
     row_template = """\
 |-
@@ -27,7 +28,7 @@ class CheckerBot:
 """  # дублировать двойные фигурные скобки
 
     def __init__(self):
-        self.site = pywikibot.Site('ru', 'wikipedia', user='CopyvioCheckerBot')
+        self.site = pywikibot.Site('ru', 'wikipedia', user=self.bot_username)
 
     def get_newpages(self, length_listpages=300, hours_offset_near=24, hours_offset_far=25):
         """Взятие новых страниц со Special:NewPages. Альтернативы:
@@ -70,7 +71,7 @@ class CheckerBot:
         for i in range(3):
             try:
                 r = requests.get('https://ru.wikipedia.org/w/api.php', params=params,
-                                 headers={'User-Agent': 'user:textworkerBot'})
+                                 headers={'User-Agent': f'user:{self.bot_username}'})
                 pc = r.json()['query']['pages']
             except:
                 message = 'Ошибка запроса к WinAPI для получения категорий страниц: %s' % pagesstring
@@ -149,7 +150,7 @@ class CheckerBot:
     def posting_to_wikitable(self):
         if not self.pages_highrates:
             return
-        page = pywikibot.Page(self.site, 'Участник:CheckerCopyvioBot/Список')
+        page = pywikibot.Page(self.site, f'Участник:{self.bot_username}/Список')
         text_to_post = []
         # for p in self.pages_checked:  # for debug
         for p in self.pages_highrates:
@@ -173,7 +174,7 @@ class CheckerBot:
             title = 'Обсуждение:' + p['title']
             post_template = '\n{template} {status} --~~~~\n'.format(
                 template=self.select_postproperties_by_rate(p['confidence'])['TalkPage_template'],
-                status='<onlyinclude>{{Участник:CheckerCopyvioBot/Список/Проверяется}}</onlyinclude>',
+                status=f'<onlyinclude>{{Участник:{self.bot_username}/Список/Проверяется}}</onlyinclude>',
             )
             page = pywikibot.Page(self.site, title)
             if page.exists():
