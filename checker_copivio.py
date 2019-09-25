@@ -3,7 +3,7 @@
 import requests
 from lxml.html import fromstring
 import re
-import pywikibot
+import pywikibot as pwb
 from datetime import datetime, timedelta
 
 
@@ -28,7 +28,7 @@ class CheckerBot:
 """  # дублировать двойные фигурные скобки
 
     def __init__(self):
-        self.site = pywikibot.Site('ru', 'wikipedia', user=self.bot_username)
+        self.site = pwb.Site('ru', 'wikipedia', user=self.bot_username)
 
     def get_newpages(self, length_listpages=300, hours_offset_near=24, hours_offset_far=25):
         """Взятие новых страниц со Special:NewPages. Альтернативы:
@@ -150,7 +150,7 @@ class CheckerBot:
     def posting_to_wikitable(self):
         if not self.pages_highrates:
             return
-        page = pywikibot.Page(self.site, f'Участник:{self.bot_username}/Список')
+        page = pwb.Page(self.site, f'Участник:{self.bot_username}/Список')
         text_to_post = []
         # for p in self.pages_checked:  # for debug
         for p in self.pages_highrates:
@@ -161,7 +161,7 @@ class CheckerBot:
                 user=p['user'],
                 url=p['url_service'],
                 color_cell=self.select_postproperties_by_rate(p['confidence'])['table_color']))
-        t = re.sub('(\n<!--\s*%tohere%.*?-->\n)', r'\1' + ''.join(text_to_post), page.get())
+        t = re.sub(r'(\n<!--\s*%tohere%.*?-->\n)', r'\1' + ''.join(text_to_post), page.get())
         self.wiki_posting_page(page, t, '+')
 
     def posting_to_Talk_pages(self):
@@ -176,7 +176,7 @@ class CheckerBot:
                 template=self.select_postproperties_by_rate(p['confidence'])['TalkPage_template'],
                 status=f'<onlyinclude>{{Участник:{self.bot_username}/Список/Проверяется}}</onlyinclude>',
             )
-            page = pywikibot.Page(self.site, title)
+            page = pwb.Page(self.site, title)
             if page.exists():
                 t = page.get() + '\n' + post_template
             else:
@@ -226,7 +226,7 @@ class CheckerBot:
         return datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S")
 
     def print_with_time(self, message, end='\n'):
-        print('%s %s' % (self.get_timeutc(), message), end=end)
+        pwb.stdout('%s %s' % (self.get_timeutc(), message), end=end)
 
 
 if __name__ == '__main__':
@@ -239,14 +239,14 @@ if __name__ == '__main__':
 
     if bot.newpages:
         # Отфильтровка страниц
-        print('%s Отфильтровка ноднозначностей и уже проверенных страниц' % (bot.get_timeutc()), end=' ')
+        pwb.stdout('%s Отфильтровка ноднозначностей и уже проверенных страниц' % (bot.get_timeutc()), end=' ')
         # По категории
         filterout_category = 'Категория:Страницы значений по алфавиту'
         bot.filter_pages_by_category(filterout_category)
         # Чистка от уже проверенных, сохраняемых в файле с пред. запуска
         bot.filter_already_checked_pages()
         bot.csv_save_dict(bot.last_newpages_filename, bot.newpages)
-        print('...done')
+        pwb.stdout('...done')
 
         # Проверка страниц на КОПИВИО
         bot.req_copyvios(use_search_engine=True)
